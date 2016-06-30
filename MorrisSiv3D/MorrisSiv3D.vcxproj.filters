@@ -282,4 +282,9 @@
       <Filter>リソース ファイル\Engine</Filter>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MorrisState.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
