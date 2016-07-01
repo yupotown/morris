@@ -116,6 +116,18 @@ void Main()
 		else {
 			fontTurn(L"の番").draw({ posTurn.x + rp * 2 + 1, posTurn.y }, colTurn);
 		}
+
+		if (holdingPiece >= 0) {
+			const Color col = (holdingPlayer == MorrisState::first) ? colF : colS;
+			Point pos = mouse;
+			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
+				Point c = { lt.x + x * grid.x, lt.y + y * grid.y };
+				if (Circle(c, rp).contains(mouse)) {
+					pos = c;
+				}
+			}
+			Circle(pos, rp).draw(col);
+		}
 	}
 }
 
