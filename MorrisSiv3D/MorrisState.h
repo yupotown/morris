@@ -32,12 +32,12 @@ struct MorrisState {
 		/// <summary>
 		/// 先攻
 		/// </summary>
-		first,
+		first = 0,
 
 		/// <summary>
 		/// 後攻
 		/// </summary>
-		second
+		second = 1
 
 	};
 
@@ -59,21 +59,16 @@ struct MorrisState {
 
 		/// <summary>
 		/// 1ターン前の位置
-		/// 移動していなければ (-1, -1)
+		/// 動かしていなければ (-1, -1)
 		/// </summary>
 		int prevX, prevY;
 
 	};
 
 	/// <summary>
-	/// 先攻のコマ
+	/// pieces[player]: player のコマ
 	/// </summary>
-	Piece fp[3];
-
-	/// <summary>
-	/// 後攻のコマ
-	/// </summary>
-	Piece sp[3];
+	Piece pieces[2][3];
 
 	/// <summary>
 	/// ゲームが終了しているか否か
