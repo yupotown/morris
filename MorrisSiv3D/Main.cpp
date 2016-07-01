@@ -60,12 +60,21 @@ void Main()
 		if (Input::MouseL.clicked) {
 			if (holdingPiece < 0 && !s.finished) {
 				// コマを掴む
-				for (int j = 0; j < 3; ++j) {
-					const auto &p = s.pieces[s.playing][j];
-					if ((p.x < 0 && Circle(posP[s.playing][j], rp).contains(mouse))
-						|| (p.x >= 0 && Circle(gridPos(p.x, p.y), rp).contains(mouse))) {
-						holdingPlayer = static_cast<MorrisState::Player>(s.playing);
-						holdingPiece = j;
+				if (s.phase == MorrisState::put) {
+					for (int i = 0; i < 3; ++i) {
+						if (s.pieces[s.playing][i].x < 0 && Circle(posP[s.playing][i], rp).contains(mouse)) {
+							holdingPlayer = static_cast<MorrisState::Player>(s.playing);
+							holdingPiece = i;
+						}
+					}
+				}
+				else {
+					for (int i = 0; i < 3; ++i) {
+						const auto &p = s.pieces[s.playing][i];
+						if (p.x >= 0 && Circle(gridPos(p.x, p.y), rp).contains(mouse)) {
+							holdingPlayer = static_cast<MorrisState::Player>(s.playing);
+							holdingPiece = i;
+						}
 					}
 				}
 			}
