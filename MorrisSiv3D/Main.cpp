@@ -39,17 +39,18 @@ void Main()
 
 		// 操作
 		if (Input::MouseL.clicked) {
-			if (holdingPiece < 0) {
+			if (holdingPiece < 0 && !s.finished) {
 				// コマを掴む
-				for (int i = 0; i < 2; ++i) for (int j = 0; j < 3; ++j) {
-					if ((s.pieces[i][j].x < 0 && Circle(posP[i][j], rp).contains(mouse))
-						|| (s.pieces[i][j].x >= 0 && Circle(gridPos(s.pieces[i][j].x, s.pieces[i][j].y), rp).contains(mouse))) {
-						holdingPlayer = static_cast<MorrisState::Player>(i);
+				for (int j = 0; j < 3; ++j) {
+					const auto &p = s.pieces[s.playing][j];
+					if ((p.x < 0 && Circle(posP[s.playing][j], rp).contains(mouse))
+						|| (p.x >= 0 && Circle(gridPos(p.x, p.y), rp).contains(mouse))) {
+						holdingPlayer = static_cast<MorrisState::Player>(s.playing);
 						holdingPiece = j;
 					}
 				}
 			}
-			else {
+			else if (holdingPiece >= 0) {
 				// コマを放す
 				for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
 					if (Circle(gridPos(x, y), rp).leftClicked) {
