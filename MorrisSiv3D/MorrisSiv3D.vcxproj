@@ -163,6 +163,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Morris.cpp" />
+    <ClCompile Include="MorrisException.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -240,6 +242,8 @@
     <Text Include="Engine\LogMessages.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Morris.h" />
+    <ClInclude Include="MorrisException.h" />
     <ClInclude Include="MorrisState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

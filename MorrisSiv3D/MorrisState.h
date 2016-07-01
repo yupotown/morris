@@ -10,12 +10,12 @@ struct MorrisState {
 		/// <summary>
 		/// コマを置くフェーズ
 		/// </summary>
-		Put,
+		put,
 
 		/// <summary>
 		/// コマを動かすフェーズ
 		/// </summary>
-		Move
+		move
 
 	};
 
@@ -74,5 +74,10 @@ struct MorrisState {
 	/// 後攻のコマ
 	/// </summary>
 	Piece sp[3];
+
+	/// <summary>
+	/// ゲームが終了しているか否か
+	/// <summary>
+	bool finished;
 
 };
