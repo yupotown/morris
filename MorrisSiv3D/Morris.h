@@ -74,6 +74,11 @@ public:
 	/// </summary>
 	MoveResult move(MorrisState::Player player, int piece, int x, int y);
 
+	/// <summary>
+	/// プレイヤー player のコマ piece を (x, y) に動かせるか否かを確認する。
+	/// </summary>
+	MoveResult checkMove(MorrisState::Player player, int piece, int x, int y);
+
 private:
 	Morris(const Morris &obj);
 	const Morris &operator =(const Morris &rhs);

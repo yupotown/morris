@@ -104,7 +104,7 @@ void Main()
 		if (holdingPiece >= 0) {
 			Point pos = mouse;
 			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
-				if (Circle(gridPos(x, y), rp).contains(mouse)) {
+				if (Circle(gridPos(x, y), rp).contains(mouse) && game.checkMove(holdingPlayer, holdingPiece, x, y) == Morris::ok) {
 					pos = gridPos(x, y);
 				}
 			}
