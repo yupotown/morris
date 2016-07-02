@@ -18,6 +18,9 @@ void Config::write(String file) const
 	ini.write(L"Turn", L"fontsize", turnFont.size());
 	ini.write(L"Turn", L"point", turnPos);
 	ini.write(L"Turn", L"color", turnCol);
+	ini.write(L"Reset", L"point", resetPos);
+	ini.write(L"Reset", L"font", resetFont.name());
+	ini.write(L"Reset", L"fontsize", resetFont.size());
 }
 
 void Config::read(String file)
@@ -37,9 +40,11 @@ void Config::read(String file)
 	pieceCol[1] = ini.getOr<Color>(L"Piece.color2", Color(0, 0, 255, 255));
 	pieceColHold[0] = Color(pieceCol[0].r, pieceCol[0].g, pieceCol[0].b, 128);
 	pieceColHold[1] = Color(pieceCol[1].r, pieceCol[1].g, pieceCol[1].b, 128);
-	turnFont = Font(ini.getOr<int>(L"Turn.fontsize", 20), ini.getOr<String>(L"Turn.font", L"UmePlus P Gothic"));
+	turnFont = Font(ini.getOr<int>(L"Turn.fontsize", 20), ini.getOr<String>(L"Turn.font", Typeface::Default.str()));
 	turnPos = ini.getOr<Point>(L"Turn.point", Point(10, 10));
 	turnCol = ini.getOr<Color>(L"Turn.color", Color(255, 255, 255, 255));
+	resetPos = ini.getOr<Point>(L"Reset.point", Point(resolution.x - 160, 10));
+	resetFont = Font(ini.getOr<int>(L"Reset.fontsize", 14), ini.getOr<String>(L"Reset.font", Typeface::Default.str()));
 }
 
 Point Config::gridPos(int x, int y) const

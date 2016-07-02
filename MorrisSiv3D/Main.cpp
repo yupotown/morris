@@ -30,6 +30,21 @@ void Main()
 		Window::Resize(conf.resolution);
 	}
 
+	// リセットボタン
+	GUIStyle style = GUIStyle::Default;
+	style.showTitle = false;
+	style.background.color = none;
+	style.borderColor = none;
+	style.padding = { 0, 0, 0, 0 };
+	style.shadowColor = none;
+	GUI gui(style);
+	WidgetStyle wstyle;
+	wstyle.font = conf.resetFont;
+	wstyle.margin = { 0, 0, 0, 0 };
+	wstyle.padding = { 0, 0, 0, 0 };
+	gui.add(L"reset", GUIButton::Create(L"リセット", wstyle));
+	gui.setPos(conf.resetPos);
+
 	// 掴んでいるコマ
 	MorrisState::Player holdingPlayer = MorrisState::first;
 	int holdingPiece = -1;
@@ -73,6 +88,11 @@ void Main()
 				}
 				holdingPiece = -1;
 			}
+		}
+
+		// リセット
+		if (gui.button(L"reset").pushed) {
+			game.reset();
 		}
 
 		// グリッド描画

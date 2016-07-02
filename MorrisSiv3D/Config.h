@@ -76,6 +76,18 @@ struct Config {
 	/// </summary>
 	Color turnCol;
 
+	/// <summary>
+	/// リセットボタンの位置
+	/// [Reset.point]
+	/// </summary>
+	Point resetPos;
+
+	/// <summary>
+	/// リセットボタンのフォント
+	/// [Reset.font]
+	/// </summary>
+	Font resetFont;
+
 	Config() = default;
 
 	/// <summary>
