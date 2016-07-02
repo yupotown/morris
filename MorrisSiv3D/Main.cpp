@@ -8,6 +8,8 @@
 
 void Main()
 {
+	Window::SetTitle(L"三目並べ by ゆぽ");
+
 	// 設定ファイル
 	const String iniFile = L"morris.ini";
 	Config conf;
