@@ -212,5 +212,7 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 *_log.html
-*.VD.db
+*.VC.db
 *.VC.opendb
+
+morris.ini

@@ -162,6 +162,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Config.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Morris.cpp" />
     <ClCompile Include="MorrisException.cpp" />
@@ -242,6 +243,7 @@
     <Text Include="Engine\LogMessages.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Config.h" />
     <ClInclude Include="Morris.h" />
     <ClInclude Include="MorrisException.h" />
     <ClInclude Include="MorrisState.h" />

@@ -2,59 +2,42 @@
 # include <Siv3D.hpp>
 
 #include "Morris.h"
+#include "Config.h"
 #include <functional>
+#include <algorithm>
 
 void Main()
 {
-	Morris game;
+	// 設定ファイル
+	const String iniFile = L"morris.ini";
+	Config conf;
+	conf.read(iniFile);
+	conf.write(iniFile);
 
-	// 盤面を描画する中心の位置
-	Point center = Window::Size() / 2;
-
-	// 盤面の1マスを描画する大きさ
-	Size grid = { 120, 120 };
-
-	// グリッドの色
-	Color colLine = { 255, 255, 255, 255 };
-
-	// グリッドの各点の座標
-	std::function<Point(int, int)> gridPos = [&](int x, int y) {
-		return Point(center.x + (x - 1) * grid.x, center.y + (y - 1) * grid.y);
-	};
-
-	// 置く前のコマを描画する位置
-	Point posP[2][3];
-	for (int i = 0; i < 2; ++i) for (int j = 0; j < 3; ++j) {
-		posP[i][j] = { center.x + (4 * i - 2) * grid.x, center.y + (j - 1) * grid.y };
+	// フルスクリーン、ウィンドウサイズ
+	if (conf.fullscreen) {
+		const Array<Size> resos = Graphics::GetFullScreenSize();
+		if (std::find(resos.begin(), resos.end(), conf.resolution) == resos.end()) {
+			Window::Resize(conf.resolution);
+		}
+		else {
+			Window::SetFullscreen(true, conf.resolution);
+		}
 	}
-
-	// コマを描画する半径
-	double rp = 24;
-
-	// コマの色
-	Color colP[2] = { {255, 0, 0, 255}, {0, 0, 255, 255} };
-
-	// 掴まれているコマを元の場所に描画するときの色
-	Color colHolding[2] = { {255, 0, 0, 128}, {0, 0, 255, 128} };
-
-	// 番や勝ち負けを表示するフォント
-	Font fontTurn(20), fontWin(20);
-
-	// 番や勝ち負けを表示する位置
-	Point posTurn = { 10, 10 };
-
-	// 番屋勝ち負けを表示する色
-	Color colTurn = { 255, 255, 255, 255 }, colWin = { 255, 255, 255, 255 };
+	else {
+		Window::Resize(conf.resolution);
+	}
 
 	// 掴んでいるコマ
 	MorrisState::Player holdingPlayer = MorrisState::first;
 	int holdingPiece = -1;
 
+	Morris game;
+
 	while (System::Update())
 	{
 		const Point mouse = Mouse::Pos();
 		const MorrisState &s = game.state();
-		const Point lt = center - grid, rb = center + grid;
 
 		// 操作
 		if (Input::MouseL.clicked) {
@@ -62,7 +45,8 @@ void Main()
 				// コマを掴む
 				if (s.phase == MorrisState::put) {
 					for (int i = 0; i < 3; ++i) {
-						if (s.pieces[s.playing][i].x < 0 && Circle(posP[s.playing][i], rp).contains(mouse)) {
+						const auto &p = s.pieces[s.playing][i];
+						if (p.x < 0 && Circle(conf.piecePos[s.playing][i], conf.pieceRad).leftClicked) {
 							holdingPlayer = static_cast<MorrisState::Player>(s.playing);
 							holdingPiece = i;
 						}
@@ -71,7 +55,7 @@ void Main()
 				else {
 					for (int i = 0; i < 3; ++i) {
 						const auto &p = s.pieces[s.playing][i];
-						if (p.x >= 0 && Circle(gridPos(p.x, p.y), rp).contains(mouse)) {
+						if (p.x >= 0 && Circle(conf.gridPos(p.x, p.y), conf.pieceRad).leftClicked) {
 							holdingPlayer = static_cast<MorrisState::Player>(s.playing);
 							holdingPiece = i;
 						}
@@ -81,7 +65,7 @@ void Main()
 			else if (holdingPiece >= 0) {
 				// コマを放す
 				for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
-					if (Circle(gridPos(x, y), rp).leftClicked) {
+					if (Circle(conf.gridPos(x, y), conf.pieceRad).leftClicked) {
 						game.move(holdingPlayer, holdingPiece, x, y);
 					}
 				}
@@ -90,54 +74,55 @@ void Main()
 		}
 
 		// グリッド描画
-		Line(gridPos(0, 0), gridPos(2, 0)).draw(colLine);
-		Line(gridPos(0, 1), gridPos(2, 1)).draw(colLine);
-		Line(gridPos(0, 2), gridPos(2, 2)).draw(colLine);
-		Line(gridPos(0, 0), gridPos(0, 2)).draw(colLine);
-		Line(gridPos(1, 0), gridPos(1, 2)).draw(colLine);
-		Line(gridPos(2, 0), gridPos(2, 2)).draw(colLine);
-		Line(gridPos(0, 0), gridPos(2, 2)).draw(colLine);
-		Line(gridPos(2, 0), gridPos(0, 2)).draw(colLine);
+		Line(conf.gridPos(0, 0), conf.gridPos(2, 0)).draw(conf.gridCol);
+		Line(conf.gridPos(0, 1), conf.gridPos(2, 1)).draw(conf.gridCol);
+		Line(conf.gridPos(0, 2), conf.gridPos(2, 2)).draw(conf.gridCol);
+		Line(conf.gridPos(0, 0), conf.gridPos(0, 2)).draw(conf.gridCol);
+		Line(conf.gridPos(1, 0), conf.gridPos(1, 2)).draw(conf.gridCol);
+		Line(conf.gridPos(2, 0), conf.gridPos(2, 2)).draw(conf.gridCol);
+		Line(conf.gridPos(0, 0), conf.gridPos(2, 2)).draw(conf.gridCol);
+		Line(conf.gridPos(2, 0), conf.gridPos(0, 2)).draw(conf.gridCol);
 
 		// 移動したコマの元の場所を表示
 		for (int i = 0; i < 2; ++i) for (int j = 0; j < 3; ++j) {
 			const auto &p = s.pieces[i][j];
 			if (p.prevX >= 0) {
-				Circle(gridPos(p.prevX, p.prevY), rp).drawFrame(2, 0, colP[i]);
-				Line(gridPos(p.prevX, p.prevY), gridPos(p.x, p.y)).draw(colP[i]);
+				Circle(conf.gridPos(p.prevX, p.prevY), conf.pieceRad).drawFrame(2, 0, conf.pieceCol[i]);
+				Line(conf.gridPos(p.prevX, p.prevY), conf.gridPos(p.x, p.y)).draw(conf.pieceCol[i]);
 			}
 		}
 
 		// 盤面上や置く前のコマを表示
 		for (int i = 0; i < 2; ++i) for (int j = 0; j < 3; ++j) {
-			const Color col = (holdingPlayer == i && holdingPiece == j) ? colHolding[i] : colP[i];
+			const Color col = (holdingPlayer == i && holdingPiece == j) ? conf.pieceColHold[i] : conf.pieceCol[i];
 			const auto &p = s.pieces[i][j];
 			if (p.x < 0) {
-				Circle(posP[i][j], rp).draw(col);
+				Circle(conf.piecePos[i][j], conf.pieceRad).draw(col);
 			}
 			else {
-				Circle(gridPos(p.x, p.y), rp).draw(col);
+				Circle(conf.gridPos(p.x, p.y), conf.pieceRad).draw(col);
 			}
 		}
 
 		// どちらの番かを表示
-		Circle({ posTurn.x + rp, posTurn.y + rp }, rp).draw(colP[s.playing]);
+		Circle({ conf.turnPos.x + conf.pieceRad, conf.turnPos.y + conf.pieceRad }, conf.pieceRad).draw(conf.pieceCol[s.playing]);
 		if (s.finished) {
-			fontWin(L"の勝ち！").draw({ posTurn.x + rp * 2 + 1, posTurn.y }, colWin);
+			conf.turnFont(L"の勝ち！").draw({ conf.turnPos.x + conf.pieceRad * 2 + 1, conf.turnPos.y }, conf.turnCol);
 		}
 		else {
-			fontTurn(L"の番").draw({ posTurn.x + rp * 2 + 1, posTurn.y }, colTurn);
+			conf.turnFont(L"の番").draw({ conf.turnPos.x + conf.pieceRad * 2 + 1, conf.turnPos.y }, conf.turnCol);
 		}
 
 		// マウスカーソルの位置に移動中のコマを描画
 		if (holdingPiece >= 0) {
 			Point pos = mouse;
 			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
-				if (Circle(gridPos(x, y), rp).contains(mouse) && game.checkMove(holdingPlayer, holdingPiece, x, y) == Morris::ok) {
-					pos = gridPos(x, y);
+				if (Circle(conf.gridPos(x, y), conf.pieceRad).contains(mouse)
+					&& game.checkMove(holdingPlayer, holdingPiece, x, y) == Morris::ok) {
+					pos = conf.gridPos(x, y);
 				}
 			}
-			Circle(pos, rp).draw(colP[holdingPlayer]);
+			Circle(pos, conf.pieceRad).draw(conf.pieceCol[holdingPlayer]);
 		}
 	}
 }
