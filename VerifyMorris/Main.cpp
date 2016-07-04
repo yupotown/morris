@@ -285,6 +285,9 @@ void writeHtml(Iterator begin, Iterator end, String path, String title, std::siz
 	writer.writeln(count, L"<br />");
 	for (auto it = begin; it != end; ++it) {
 		writer.writeln(L"<a href=\"../img/", (*it), L".png\" title=\"", (*it), L"\"><img src=\"../img/", (*it), L".png\" /></a>");
+		if (!FileSystem::Exists(Format(L"out/img/", (*it), L".png"))) {
+			saveAsImage((*it), Format(L"out/img/", (*it), L".png"));
+		}
 	}
 	writer.writeln(L"</body>");
 	writer.writeln(L"</html>");
@@ -348,6 +351,10 @@ void generateAllImage(int n = (1 << 29)) {
 void blutePut() {
 	std::set<int> ss[7];
 	ss[0].insert(0);
+	{
+		BinaryWriter writer(L"out/blute/put0");
+		for (auto it = ss[0].begin(); it != ss[0].end(); ++it) writer.write(*it);
+	}
 	writeHtml(ss[0].begin(), ss[0].end(), L"out/blute/put0.html", L"put0", ss[0].size());
 	for (int i = 1; i <= 6; ++i) {
 		const Turn t = (i % 2 == 0) ? first : second;
@@ -362,7 +369,6 @@ void blutePut() {
 				int s2 = setPiece(s, x, y, next);
 				s2 = minimize(s2);
 				ss[i].insert(s2);
-				saveAsImage(s2, Format(L"out/img/", s2, L".png"));
 			}
 		}
 		BinaryWriter writer(Format(L"out/blute/put", i));
@@ -423,16 +429,64 @@ void bluteMove() {
 		}
 	}
 	BinaryWriter writer(L"out/blute/move");
-	for (auto it = res.begin(); it != res.end(); ++it) {
-		writer.write(*it);
-		saveAsImage(*it, Format(L"out/img/", *it, L".png"));
-	}
+	for (auto it = res.begin(); it != res.end(); ++it) writer.write(*it);
 	writeHtml(res.begin(), res.end(), L"out/blute/move.html", L"move", res.size());
+}
+
+// 全状態(sorted)
+std::vector<int> allss;
+
+// 状態 -> allss のインデックス
+std::map<int, int> allssr;
+
+// blutePut と bluteMove の結果から、可能な全状態のリストを作って保存する
+void makeAllPutMove() {
+	allss.clear();
+	allssr.clear();
+	std::set<int> ss;
+	for (int i = 0; i <= 6; ++i) {
+		BinaryReader reader(Format(L"out/blute/put", i));
+		for (int s; reader.read(s); ss.insert(s));
+	}
+	BinaryReader reader(L"out/blute/move");
+	for (int s; reader.read(s); ss.insert(s));
+	BinaryWriter writer(L"out/all");
+	int index = 0;
+	for (auto it = ss.begin(); it != ss.end(); ++it) {
+		writer.write(*it);
+		allss.push_back(*it);
+		allssr.insert(std::make_pair((*it), index));
+		++index;
+	}
+	writeHtml(ss.begin(), ss.end(), L"out/debug/all.html", L"all", ss.size());
+}
+
+// 全状態読み込み
+void loadAllss() {
+	allss.clear();
+	allssr.clear();
+	BinaryReader reader(L"out/all");
+	int index = 0;
+	for (int s; reader.read(s); ) {
+		allss.push_back(s);
+		allssr.insert(std::make_pair(s, index));
+		++index;
+	}
+}
+
+// 全状態保存
+void saveAllss() {
+	BinaryWriter writer(L"out/all");
+	for (auto it = allss.begin(); it != allss.end(); ++it) writer.write(*it);
 }
 
 void Main()
 {
 	int s = 0;
+
+	loadWinner();
+
+	#pragma region GUI 準備
 
 	const Color colPiece[4] = {
 		{ 255, 255, 255, 255 },
@@ -476,10 +530,7 @@ void Main()
 	gui.add(L"turn", GUIRadioButton::Create({ L"先攻(赤)", L"後攻(青)" }, 0u));
 	gui.add(L"phase", GUIRadioButton::Create({ L"置く", L"動かす(1)", L"動かす(2)", L"動かす" }, 0u));
 
-	loadWinner();
-
-	blutePut();
-	bluteMove();
+	#pragma endregion
 
 	while (System::Update())
 	{
