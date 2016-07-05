@@ -3,6 +3,8 @@
 #include <set>
 #include <list>
 #include <map>
+#include <queue>
+#include <vector>
 
 // * マス (x, y) を数値 (y * 3 + x) に対応させる
 // 状態		| フェーズ[2] | ターン[1] | 青の直前移動[4] | 赤の直前移動[4] | 盤面[18] |
@@ -170,9 +172,8 @@ bool isValid(int s) {
 
 #pragma region 画像
 
-Image img(51, 57, { 255, 255, 255 });
-
 bool saveAsImage(int s, String path) {
+	Image img(51, 57, { 255, 255, 255 });
 	const Phase ph = phase(s);
 	const LastMove lmf = lastmove(s, first), lms = lastmove(s, second);
 	const Color col[4] = { { 128, 128, 128 },{ 255, 0, 0 },{ 0, 0, 255 },{ 0, 0, 0 } };
@@ -340,6 +341,8 @@ int winner(int s) {
 
 #pragma endregion
 
+#pragma region 総当たり
+
 // すべての状態の画像を生成する。
 void generateAllImage(int n = (1 << 29)) {
 	for (int i = 0; i < n; ++i) if (isValid(i)) {
@@ -363,7 +366,7 @@ void blutePut() {
 			int s = (*it);
 			if (winner(s) != 0) continue;
 			s = setTurn(s, t);
-			s = setPhase(s, (s < 6) ? put : move1);
+			s = setPhase(s, (i < 6) ? put : move1);
 			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
 				if (piece(s, x, y) != blank) continue;
 				int s2 = setPiece(s, x, y, next);
@@ -394,9 +397,11 @@ void bluteMove() {
 			const Turn t = turn(s);
 			const Phase ph = phase(s);
 			const Piece tp = static_cast<Piece>(static_cast<int>(t) + 1);
+			const LastMove lm = lastmove(s, t);
 			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
 				if (piece(s, x, y) != tp) continue;
 				for (int i = 0; i < 16; ++i) {
+					if (ph == move && i == lm) continue;
 					const Move &m = lmTbl[i];
 					int x2, y2;
 					if (m.x1 == x && m.y1 == y) {
@@ -480,11 +485,136 @@ void saveAllss() {
 	for (auto it = allss.begin(); it != allss.end(); ++it) writer.write(*it);
 }
 
+#pragma endregion
+
+#pragma region グラフ
+
+// 状態遷移グラフ(allss のインデックス)
+std::vector<std::vector<int>> es, esr;
+
+// allss を読み込んでグラフを生成する。
+void makeGraph() {
+	loadWinner();
+	loadAllss();
+
+	const int n = allss.size();
+	std::vector<bool> vted(n, false);
+	es.assign(n, std::vector<int>());
+	esr.assign(n, std::vector<int>());
+
+	std::queue<int> q;
+	q.push(allssr[0]);
+	vted[allssr[0]] = true;
+
+	while (!q.empty()) {
+		const int si = q.front(); q.pop();
+		const int s = allss[si];
+		const Turn t = turn(s), t2 = (t == first) ? second : first;
+		const Piece tp = static_cast<Piece>(t + 1);
+		const Phase ph = phase(s);
+		const LastMove lm = lastmove(s, t), lm2 = lastmove(s, t2);
+
+		if (winner(s) != 0) continue;
+
+		if (ph >= move1) {
+			// 動かすフェーズ
+			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
+				if (piece(s, x, y) != tp) continue;
+				for (int i = 0; i < 16; ++i) {
+					if (ph == move && i == lm) continue;
+					const Move &m = lmTbl[i];
+					int x2, y2;
+					if (m.x1 == x && m.y1 == y) {
+						x2 = m.x2; y2 = m.y2;
+					}
+					else if (m.x2 == x && m.y2 == y) {
+						x2 = m.x1; y2 = m.y1;
+					}
+					else {
+						continue;
+					}
+					if (piece(s, x2, y2) != blank) continue;
+					int s2 = setPiece(s, x, y, blank);
+					s2 = setPiece(s2, x2, y2, tp);
+					s2 = setTurn(s2, t2);
+					s2 = setLastmove(s2, t, i);
+					if (ph == move1) s2 = setPhase(s2, move2);
+					else if (ph == move2) s2 = setPhase(s2, move);
+					s2 = minimize(s2);
+					const int si2 = allssr[s2];
+					if (vted[si2]) continue;
+					es[si].push_back(si2);
+					esr[si2].push_back(si);
+					q.push(si2);
+					vted[si2] = true;
+				}
+			}
+		}
+		else {
+			// 置くフェーズ
+			int pc[4] = { 0, 0, 0, 0 };
+			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
+				++pc[piece(s, x, y)];
+			}
+			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
+				if (piece(s, x, y) != blank) continue;
+				int s2 = setPiece(s, x, y, tp);
+				s2 = setTurn(s2, t2);
+				if (t == second && pc[blue] == 2) s2 = setPhase(s2, move1);
+				s2 = minimize(s2);
+				const int si2 = allssr[s2];
+				if (vted[si2]) continue;
+				es[si].push_back(si2);
+				esr[si2].push_back(si);
+				q.push(si2);
+				vted[si2] = true;
+			}
+		}
+	}
+
+	TextWriter writer(L"out/debug/es.txt");
+	for (int i = 0; i < n; ++i) {
+		writer.writeln(allss[i], L" {");
+		for (std::size_t j = 0; j < es[i].size(); ++j) {
+			writer.writeln(L"\t", allss[es[i][j]], L",");
+		}
+		writer.writeln(L"}");
+	}
+}
+
+// グラフ構造をリンクにした HTML を生成する。
+void generateGraphHtml(int s) {
+	if (FileSystem::Exists(Format(L"out/graph/html/", s, L".html"))) return;
+	TextWriter writer(Format(L"out/graph/html/", s, L".html"));
+	writer.writeln(L"<html>");
+	writer.writeln(L"<head><title>", s, L"</title></head>");
+	writer.writeln(L"<body>");
+	writer.writeln(L"<img src=\"../../img/", s, L".png\" />");
+	writer.writeln(L"<hr />");
+	const int si = allssr[s];
+	for (std::size_t i = 0; i < es[si].size(); ++i) {
+		const int si2 = es[si][i];
+		const int s2 = allss[si2];
+		writer.write(L"<a href=\"", s2, L".html\" title=\"", s2, L"\">");
+		writer.write(L"<img src=\"../../img/", s2, L".png\" />");
+		writer.writeln(L"</a>");
+	}
+	writer.writeln(L"</body>");
+	writer.writeln(L"</html>");
+	writer.close();
+	for (std::size_t i = 0; i < es[si].size(); ++i) {
+		generateGraphHtml(allss[es[si][i]]);
+	}
+}
+
+#pragma endregion
+
 void Main()
 {
 	int s = 0;
 
-	loadWinner();
+	makeGraph();
+	generateGraphHtml(0);
 
 	#pragma region GUI 準備
 
