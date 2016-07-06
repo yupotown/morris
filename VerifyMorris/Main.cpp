@@ -497,7 +497,7 @@ void makeGraph() {
 	loadWinner();
 	loadAllss();
 
-	const int n = allss.size();
+	const std::size_t n = allss.size();
 	std::vector<bool> vted(n, false);
 	es.assign(n, std::vector<int>());
 	esr.assign(n, std::vector<int>());
@@ -516,6 +516,7 @@ void makeGraph() {
 
 		if (winner(s) != 0) continue;
 
+		std::set<int> temp;
 		if (ph >= move1) {
 			// 動かすフェーズ
 			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) {
@@ -542,9 +543,11 @@ void makeGraph() {
 					else if (ph == move2) s2 = setPhase(s2, move);
 					s2 = minimize(s2);
 					const int si2 = allssr[s2];
-					if (vted[si2]) continue;
+					if (temp.count(si2) != 0) continue;
+					temp.insert(si2);
 					es[si].push_back(si2);
 					esr[si2].push_back(si);
+					if (vted[si2]) continue;
 					q.push(si2);
 					vted[si2] = true;
 				}
@@ -563,9 +566,11 @@ void makeGraph() {
 				if (t == second && pc[blue] == 2) s2 = setPhase(s2, move1);
 				s2 = minimize(s2);
 				const int si2 = allssr[s2];
-				if (vted[si2]) continue;
+				if (temp.count(si2) != 0) continue;
+				temp.insert(si2);
 				es[si].push_back(si2);
 				esr[si2].push_back(si);
+				if (vted[si2]) continue;
 				q.push(si2);
 				vted[si2] = true;
 			}
@@ -583,27 +588,145 @@ void makeGraph() {
 }
 
 // グラフ構造をリンクにした HTML を生成する。
-void generateGraphHtml(int s) {
-	if (FileSystem::Exists(Format(L"out/graph/html/", s, L".html"))) return;
-	TextWriter writer(Format(L"out/graph/html/", s, L".html"));
-	writer.writeln(L"<html>");
-	writer.writeln(L"<head><title>", s, L"</title></head>");
-	writer.writeln(L"<body>");
-	writer.writeln(L"<img src=\"../../img/", s, L".png\" />");
-	writer.writeln(L"<hr />");
-	const int si = allssr[s];
-	for (std::size_t i = 0; i < es[si].size(); ++i) {
-		const int si2 = es[si][i];
-		const int s2 = allss[si2];
-		writer.write(L"<a href=\"", s2, L".html\" title=\"", s2, L"\">");
-		writer.write(L"<img src=\"../../img/", s2, L".png\" />");
-		writer.writeln(L"</a>");
+void generateGraphHtml() {
+	std::vector<bool> vted(allss.size(), false);
+	std::queue<int> q;
+	q.push(0);
+	vted[allssr[0]] = true;
+	while (!q.empty()) {
+		int s = q.front(); q.pop();
+		TextWriter writer(Format(L"out/graph/html/", s, L".html"));
+		writer.writeln(L"<html>");
+		writer.writeln(L"<head><title>", s, L"</title></head>");
+		writer.writeln(L"<body>");
+		writer.writeln(L"<img src=\"../../img/", s, L".png\" />");
+		writer.writeln(L"<hr />");
+		const int si = allssr[s];
+		for (std::size_t i = 0; i < es[si].size(); ++i) {
+			const int si2 = es[si][i];
+			const int s2 = allss[si2];
+			writer.write(L"<a href=\"", s2, L".html\" title=\"", s2, L"\">");
+			writer.write(L"<img src=\"../../img/", s2, L".png\" />");
+			writer.writeln(L"</a>");
+			if (!vted[si2]) {
+				vted[si2] = true;
+				q.push(s2);
+			}
+		}
+		writer.writeln(L"</body>");
+		writer.writeln(L"</html>");
+		writer.close();
 	}
-	writer.writeln(L"</body>");
-	writer.writeln(L"</html>");
-	writer.close();
-	for (std::size_t i = 0; i < es[si].size(); ++i) {
-		generateGraphHtml(allss[es[si][i]]);
+}
+
+// 先手/後手が既に勝っている状態のリスト
+std::vector<int> win1[2];
+
+// 先手/後手が確実に勝てる状態のリスト
+std::set<int> win[2];
+
+enum Winner {
+	unknown = 0,
+	fwin = 1,
+	swin = 2,
+};
+
+// 先手/後手が確実に勝てるか
+std::vector<Winner> winners;
+
+// 既に勝っている状態のリストを生成する。
+void makeWinnersList1() {
+	win1[first].clear();
+	win1[second].clear();
+	winners.assign(allss.size(), unknown);
+	for (auto it = winnerMap.begin(); it != winnerMap.end(); ++it) {
+		const int si = allssr[it->first];
+		if (it->second == 1) {
+			win1[first].push_back(si);
+			winners[si] = fwin;
+		}
+		if (it->second == 2) {
+			win1[second].push_back(si);
+			winners[si] = swin;
+		}
+	}
+}
+
+// 確実に勝てる状態のリストを生成する。
+void makeWinnersList(Player pl) {
+	const Winner w = (pl == first) ? fwin : swin;
+	win[pl].clear();
+	std::set<int> ss[2]; // ss[0]: 相手の番で確実に勝てる状態, ss[1]: 自分の番で確実に勝てる状態
+	std::vector<bool> vted(allss.size(), false);
+	for (std::size_t i = 0; i < win1[pl].size(); ++i) {
+		ss[0].insert(win1[pl][i]);
+		vted[win1[pl][i]] = true;
+	}
+	while (ss[0].size() != 0) {
+		// 自分の番で、次に勝てる状態が1つでもあれば勝てる状態
+		for (auto it = ss[0].begin(); it != ss[0].end(); ++it) for (std::size_t i = 0; i < esr[*it].size(); ++i) {
+			const int v = esr[*it][i];
+			if (vted[v]) continue;
+			vted[v] = true;
+			winners[v] = w;
+			win[pl].insert(v);
+			ss[1].insert(v);
+		}
+		ss[0].clear();
+
+		// 相手の番で、次の状態がすべて勝てる状態なら勝てる状態
+		std::set<int> parent;
+		for (auto it = ss[1].begin(); it != ss[1].end(); ++it) for (std::size_t i = 0; i < esr[*it].size(); ++i) {
+			const int v = esr[*it][i];
+			if (!vted[v]) parent.insert(v);
+		}
+		for (auto it = parent.begin(); it != parent.end(); ++it) {
+			const int v = (*it);
+			bool f = true;
+			for (std::size_t i = 0; i < es[v].size(); ++i) {
+				f &= (winners[es[v][i]] == w);
+			}
+			if (f) {
+				vted[v] = true;
+				winners[v] = w;
+				win[pl].insert(v);
+				ss[0].insert(v);
+			}
+		}
+		ss[1].clear();
+	}
+}
+
+// グラフ構造をリンクにした HTML を必勝手を明示して生成する。
+void generateGraphHtmlWithWinner() {
+	std::vector<bool> vted(allss.size(), false);
+	std::queue<int> q;
+	q.push(0);
+	vted[allssr[0]] = true;
+	auto col = [&](int si) { return (winners[si] == 1) ? L"#ff0000" : (winners[si] == 2) ? L"#0000ff" : L"#808080"; };
+	while (!q.empty()) {
+		int s = q.front(); q.pop();
+		TextWriter writer(Format(L"out/graph/html_winner/", s, L".html"));
+		const int si = allssr[s];
+		writer.writeln(L"<html>");
+		writer.writeln(L"<head><title>", s, L"</title></head>");
+		writer.writeln(L"<body>");
+		writer.writeln(L"<img src=\"../../img/", s, L".png\" style=\"border: solid 2px ", col(si), L";\" />");
+		writer.writeln(L"<hr />");
+		for (std::size_t i = 0; i < es[si].size(); ++i) {
+			const int si2 = es[si][i];
+			const int s2 = allss[si2];
+			writer.write(L"<a href=\"", s2, L".html\" title=\"", s2, L"\">");
+			writer.write(L"<img src=\"../../img/", s2, L".png\" style=\"border: solid 2px ", col(si2), L";\" />");
+			writer.writeln(L"</a>");
+			if (!vted[si2]) {
+				vted[si2] = true;
+				q.push(s2);
+			}
+		}
+		writer.writeln(L"</body>");
+		writer.writeln(L"</html>");
+		writer.close();
 	}
 }
 
@@ -614,7 +737,10 @@ void Main()
 	int s = 0;
 
 	makeGraph();
-	generateGraphHtml(0);
+	makeWinnersList1();
+	makeWinnersList(first);
+	makeWinnersList(second);
+	generateGraphHtmlWithWinner();
 
 	#pragma region GUI 準備
 
