@@ -239,6 +239,11 @@
     <Text Include="Engine\dll(x86)\SoundTouch\COPYING.TXT" />
     <Text Include="Engine\LogMessages.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MorrisLib\MorrisLib.vcxproj">
+      <Project>{a534cc65-2f0e-4f92-9fc7-7f6fc4981d4a}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
