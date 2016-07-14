@@ -16,8 +16,8 @@ namespace Morris {
 		std::map<State, std::set<State>> res;
 		int ssi = 0;
 
-		res.insert(std::make_pair(0, std::set<State>()));
-		ss[ssi].insert(0);
+		res.insert(std::make_pair(State(0), std::set<State>()));
+		ss[ssi].insert(State(0));
 
 		while (!ss[ssi].empty()) {
 			ssi = (ssi + 1) % 2;
@@ -39,10 +39,10 @@ namespace Morris {
 				if (ph == State::put) {
 					if (t == State::second) {
 						int pc[4] = { 0, 0, 0, 0 };
-						for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) ++pc[s.vertex({ x, y })];
+						REP_VTX(x, y) ++pc[s.vertex({ x, y })];
 						if (pc[State::blue] == 2) s2 = s2.phase(State::move1);
 					}
-					for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) if (s2.vertex({ x, y }) == State::blank) {
+					REP_VTX(x, y) if (s2.vertex({ x, y }) == State::blank) {
 						const State s3 = s2.vertex({ x, y }, v).minimize();
 						res[s].insert(s3); ss[ssi].insert(s3);
 					}
@@ -51,7 +51,7 @@ namespace Morris {
 				if (ph >= State::move1) {
 					if (ph == State::move1) s2 = s2.phase(State::move2);
 					else if (ph == State::move2) s2 = s2.phase(State::move3);
-					for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) if (s2.vertex({ x, y }) == v) {
+					REP_VTX(x, y) if (s2.vertex({ x, y }) == v) {
 						const State::Point a = { x, y };
 						for (int i = 0; i < 16; ++i) {
 							const State::Edge e = static_cast<State::Edge>(i);
@@ -146,7 +146,7 @@ namespace Morris {
 
 	void Blute::readAllState(const std::string & path)
 	{
-		readAllState(std::ifstream(path));
+		readAllState(std::ifstream(path, std::ios::binary));
 	}
 
 	void Blute::readAllState(std::istream & is)
@@ -154,20 +154,20 @@ namespace Morris {
 		all.clear();
 		allr.clear();
 
-		int buf;
+		State s;
 		int index = 0;
 		while (true) {
-			is.read(reinterpret_cast<char *>(&buf), sizeof(int));
+			is.read(reinterpret_cast<char *>(&s.v), sizeof(int));
 			if (is.eof()) break;
-			all.push_back(buf);
-			allr.insert(std::make_pair(buf, index));
+			all.push_back(s);
+			allr.insert(std::make_pair(s, index));
 			++index;
 		}
 	}
 
 	void Blute::writeAllState(const std::string & path)
 	{
-		writeAllState(std::ofstream(path));
+		writeAllState(std::ofstream(path, std::ios::binary));
 	}
 
 	void Blute::writeAllState(std::ostream & os)
@@ -179,7 +179,7 @@ namespace Morris {
 
 	void Blute::readGraph(const std::string & path)
 	{
-		readGraph(std::ifstream(path));
+		readGraph(std::ifstream(path, std::ios::binary));
 	}
 
 	void Blute::readGraph(std::istream & is)
@@ -187,29 +187,37 @@ namespace Morris {
 		const int n = all.size();
 		es.assign(n, std::vector<int>());
 		esr.assign(n, std::vector<int>());
-		int cnt, buf;
+		int cnt;
+		State s1, s2;
 		for (int i = 0; i < n; ++i) {
+			is.read(reinterpret_cast<char *>(&s1.v), sizeof(int));
+			const int si = allr.at(s1);
 			is.read(reinterpret_cast<char *>(&cnt), sizeof(int));
 			for (int j = 0; j < cnt; ++j) {
-				is.read(reinterpret_cast<char *>(&buf), sizeof(int));
-				es[i].push_back(buf);
-				esr[buf].push_back(i);
+				is.read(reinterpret_cast<char *>(&s2.v), sizeof(int));
+				const int si2 = allr.at(s2);
+				es[si].push_back(si2);
+				esr[si2].push_back(si);
 			}
 		}
 	}
 
 	void Blute::writeGraph(const std::string & path) const
 	{
-		writeGraph(std::ofstream(path));
+		writeGraph(std::ofstream(path, std::ios::binary));
 	}
 
 	void Blute::writeGraph(std::ostream & os) const
 	{
 		const int n = all.size();
 		for (int i = 0; i < n; ++i) {
-			os.write(reinterpret_cast<const char *>(&i), sizeof(int));
+			const State s = all[i];
+			os.write(reinterpret_cast<const char *>(&s.v), sizeof(int));
+			const int cnt = es[i].size();
+			os.write(reinterpret_cast<const char *>(&cnt), sizeof(int));
 			for (std::size_t j = 0; j < es[i].size(); ++j) {
-				os.write(reinterpret_cast<const char *>(&es[i][j]), sizeof(int));
+				const State s2 = all[es[i][j]];
+				os.write(reinterpret_cast<const char *>(&s2.v), sizeof(int));
 			}
 		}
 	}

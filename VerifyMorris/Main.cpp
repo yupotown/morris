@@ -70,13 +70,13 @@ void makeWinnersList1() {
 	win1[State::first].clear();
 	win1[State::second].clear();
 	winners.assign(blute.getAll().size(), unknown);
-	for (auto it = State::winMap.begin(); it != State::winMap.end(); ++it) {
-		const int si = blute.getIndexOfAll(it->first);
-		if (it->second == 1) {
+	for (std::size_t si = 0; si < blute.getAll().size(); ++si) {
+		State::Vertex winner = blute.getAll()[si].winner();
+		if (winner == State::red) {
 			win1[State::first].push_back(si);
 			winners[si] = fwin;
 		}
-		if (it->second == 2) {
+		if (winner == State::blue) {
 			win1[State::second].push_back(si);
 			winners[si] = swin;
 		}
@@ -188,11 +188,13 @@ void generateGraphHtml() {
 
 void Main()
 {
-	State s = 336075034;
+	State s = 0;
 
 	blute.makeGraph();
 	blute.writeAllState("out/all");
 	blute.writeGraph("out/graph");
+	//blute.readAllState("out/all");
+	//blute.readGraph("out/graph");
 	makeWinnersList();
 	generateGraphHtml();
 
