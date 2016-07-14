@@ -9,9 +9,9 @@
 
 namespace Morris {
 
-	class Blute {
+	class Graph {
 	public:
-		Blute();
+		Graph();
 
 		/// <summary>
 		/// ‚·‚×‚Ä‚Ìó‘Ô‚ğ‘“–‚½‚è‚µ‚Ä(Å¬‰»‚³‚ê‚½ó‘Ô‚Ì)ó‘Ô‘JˆÚƒOƒ‰ƒt‚ğ¶¬‚·‚éB
@@ -93,8 +93,8 @@ namespace Morris {
 		#pragma endregion
 
 	private:
-		Blute(const Blute &obj);
-		const Blute &operator =(const Blute &rhs);
+		Graph(const Graph &obj);
+		const Graph &operator =(const Graph &rhs);
 
 		std::vector<State> all;
 		std::map<State, int> allr;

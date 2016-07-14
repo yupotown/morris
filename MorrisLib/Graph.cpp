@@ -1,4 +1,4 @@
-#include "Blute.h"
+#include "Graph.h"
 
 #include <fstream>
 
@@ -6,11 +6,11 @@
 
 namespace Morris {
 
-	Morris::Blute::Blute()
+	Morris::Graph::Graph()
 	{
 	}
 
-	void Blute::makeGraph()
+	void Graph::makeGraph()
 	{
 		std::set<State> ss[2];
 		std::map<State, std::set<State>> res;
@@ -80,7 +80,7 @@ namespace Morris {
 			++index;
 		}
 
-		const int n = all.size();
+		const std::size_t n = all.size();
 		es.assign(n, std::vector<int>());
 		esr.assign(n, std::vector<int>());
 		for (auto it = res.begin(); it != res.end(); ++it) {
@@ -95,24 +95,24 @@ namespace Morris {
 		}
 	}
 
-	const std::vector<State>& Blute::getAll() const
+	const std::vector<State>& Graph::getAll() const
 	{
 		return all;
 	}
 
-	const std::size_t Blute::getIndexOfAll(State s) const
+	const std::size_t Graph::getIndexOfAll(State s) const
 	{
 		return allr.at(s);
 	}
 
-	const std::set<State> Blute::getNext(State s) const
+	const std::set<State> Graph::getNext(State s) const
 	{
 		std::set<State> res;
 		getNext(s, res);
 		return res;
 	}
 
-	void Blute::getNext(State s, std::set<State>& res) const
+	void Graph::getNext(State s, std::set<State>& res) const
 	{
 		const int si = allr.at(s.minimize());
 		for (std::size_t i = 0; i < es[si].size(); ++i) {
@@ -120,14 +120,14 @@ namespace Morris {
 		}
 	}
 
-	const std::set<State> Blute::getPrev(State s) const
+	const std::set<State> Graph::getPrev(State s) const
 	{
 		std::set<State> res;
 		getPrev(s, res);
 		return res;
 	}
 
-	void Blute::getPrev(State s, std::set<State>& res) const
+	void Graph::getPrev(State s, std::set<State>& res) const
 	{
 		const int si = allr.at(s.minimize());
 		for (std::size_t i = 0; i < esr[si].size(); ++i) {
@@ -135,21 +135,21 @@ namespace Morris {
 		}
 	}
 
-	Morris::Blute::Blute(const Blute &)
+	Morris::Graph::Graph(const Graph &)
 	{
 	}
 
-	const Blute & Morris::Blute::operator=(const Blute &)
+	const Graph & Morris::Graph::operator=(const Graph &)
 	{
 		return *this;
 	}
 
-	void Blute::readAllState(const std::string & path)
+	void Graph::readAllState(const std::string & path)
 	{
 		readAllState(std::ifstream(path, std::ios::binary));
 	}
 
-	void Blute::readAllState(std::istream & is)
+	void Graph::readAllState(std::istream & is)
 	{
 		all.clear();
 		allr.clear();
@@ -165,31 +165,31 @@ namespace Morris {
 		}
 	}
 
-	void Blute::writeAllState(const std::string & path)
+	void Graph::writeAllState(const std::string & path)
 	{
 		writeAllState(std::ofstream(path, std::ios::binary));
 	}
 
-	void Blute::writeAllState(std::ostream & os)
+	void Graph::writeAllState(std::ostream & os)
 	{
 		for (std::size_t i = 0; i < all.size(); ++i) {
 			os.write(reinterpret_cast<const char *>(&all[i].v), sizeof(int));
 		}
 	}
 
-	void Blute::readGraph(const std::string & path)
+	void Graph::readGraph(const std::string & path)
 	{
 		readGraph(std::ifstream(path, std::ios::binary));
 	}
 
-	void Blute::readGraph(std::istream & is)
+	void Graph::readGraph(std::istream & is)
 	{
-		const int n = all.size();
+		const std::size_t n = all.size();
 		es.assign(n, std::vector<int>());
 		esr.assign(n, std::vector<int>());
 		int cnt;
 		State s1, s2;
-		for (int i = 0; i < n; ++i) {
+		for (std::size_t i = 0; i < n; ++i) {
 			is.read(reinterpret_cast<char *>(&s1.v), sizeof(int));
 			const int si = allr.at(s1);
 			is.read(reinterpret_cast<char *>(&cnt), sizeof(int));
@@ -202,20 +202,20 @@ namespace Morris {
 		}
 	}
 
-	void Blute::writeGraph(const std::string & path) const
+	void Graph::writeGraph(const std::string & path) const
 	{
 		writeGraph(std::ofstream(path, std::ios::binary));
 	}
 
-	void Blute::writeGraph(std::ostream & os) const
+	void Graph::writeGraph(std::ostream & os) const
 	{
-		const int n = all.size();
-		for (int i = 0; i < n; ++i) {
+		const std::size_t n = all.size();
+		for (std::size_t i = 0; i < n; ++i) {
 			const State s = all[i];
 			os.write(reinterpret_cast<const char *>(&s.v), sizeof(int));
-			const int cnt = es[i].size();
+			const std::size_t cnt = es[i].size();
 			os.write(reinterpret_cast<const char *>(&cnt), sizeof(int));
-			for (std::size_t j = 0; j < es[i].size(); ++j) {
+			for (std::size_t j = 0; j < cnt; ++j) {
 				const State s2 = all[es[i][j]];
 				os.write(reinterpret_cast<const char *>(&s2.v), sizeof(int));
 			}
