@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 namespace Morris {
 
 	struct State {
@@ -10,7 +12,7 @@ namespace Morris {
 		/// </summary>
 		int v;
 
-#pragma region フェーズ
+		#pragma region フェーズ
 
 		/// <summary>
 		/// フェーズ(shift: 27)
@@ -43,21 +45,21 @@ namespace Morris {
 		/// <summary>
 		/// フェーズ
 		/// </summary>
-		inline Phase phase() const { return static_cast<Phase>((v >> 27) & 3); }
+		Phase phase() const { return static_cast<Phase>((v >> 27) & 3); }
 
 		/// <summary>
 		/// フェーズ
 		/// </summary>
-		inline State phase(Phase ph) const {
+		State phase(Phase ph) const {
 			State res(v);
 			res.v &= ~(3 << 27);
 			res.v |= (static_cast<int>(ph) << 27);
 			return res;
 		}
 
-#pragma endregion
+		#pragma endregion
 
-#pragma region ターン(プレイヤー)
+		#pragma region ターン(プレイヤー)
 
 		/// <summary>
 		/// ターン(プレイヤー)(shift: 26)
@@ -81,21 +83,21 @@ namespace Morris {
 		/// <summary>
 		/// ターン
 		/// </summary>
-		inline Turn turn() const { return static_cast<Turn>((v >> 26) & 1); }
+		Turn turn() const { return static_cast<Turn>((v >> 26) & 1); }
 
 		/// <summary>
 		/// ターン
 		/// </summary>
-		inline State turn(Turn t) const {
+		State turn(Turn t) const {
 			State res(v);
 			res.v &= ~(1 << 26);
 			res.v |= (static_cast<int>(t) << 26);
 			return res;
 		}
 
-#pragma endregion
+		#pragma endregion
 
-#pragma region 頂点
+		#pragma region 頂点
 
 		/// <summary>
 		/// 頂点の位置
@@ -112,16 +114,16 @@ namespace Morris {
 			Point(int v) : v(v) {}
 			Point(int x, int y) : v(y * 3 + x) {}
 
-			inline int x() const { return v % 3; }
-			inline int y() const { return v / 3; }
+			int x() const { return v % 3; }
+			int y() const { return v / 3; }
 
-			inline void set(int x, int y) { v = y * 3 + x; }
+			void set(int x, int y) { v = y * 3 + x; }
 
-			inline operator int() const { return v; }
-			inline const Point &operator =(int rhs) { v = rhs; return *this; }
-			inline const Point &operator =(const Point &rhs) { v = rhs.v; return *this; }
-			inline bool operator ==(const Point &rhs) const { return v == rhs.v; }
-			inline bool operator !=(const Point &rhs) const { return v != rhs.v; }
+			operator int() const { return v; }
+			const Point &operator =(int rhs) { v = rhs; return *this; }
+			const Point &operator =(const Point &rhs) { v = rhs.v; return *this; }
+			bool operator ==(const Point &rhs) const { return v == rhs.v; }
+			bool operator !=(const Point &rhs) const { return v != rhs.v; }
 
 		};
 
@@ -153,26 +155,26 @@ namespace Morris {
 
 		};
 
-		inline int vertexShift(const Point &pt) const { return pt.v * 2; }
+		int vertexShift(const Point &pt) const { return pt.v * 2; }
 
 		/// <summary>
 		/// 頂点
 		/// </summary>
-		inline Vertex vertex(const Point &pt) const { return static_cast<Vertex>((v >> vertexShift(pt)) & 3); }
+		Vertex vertex(const Point &pt) const { return static_cast<Vertex>((v >> vertexShift(pt)) & 3); }
 
 		/// <summary>
 		/// 頂点
 		/// </summary>
-		inline State vertex(const Point &pt, const Vertex &vx) const {
+		State vertex(const Point &pt, const Vertex &vx) const {
 			State res(v);
 			res.v &= ~(3 << vertexShift(pt));
 			res.v |= (static_cast<int>(vx) << vertexShift(pt));
 			return res;
 		}
 
-#pragma endregion
+		#pragma endregion
 
-#pragma region 直前の移動(辺)
+		#pragma region 直前の移動(辺)
 
 		/// <summary>
 		/// 辺(直前の移動)(shift: 18, 22)
@@ -199,19 +201,19 @@ namespace Morris {
 		};
 		typedef Edge LastMove;
 
-		inline int lastMoveShift(Player pl) const {
+		int lastMoveShift(Player pl) const {
 			return pl == first ? 18 : 22;
 		}
 
 		/// <summary>
 		/// 直前の移動
 		/// </summary>
-		inline LastMove lastMove(Player pl) const { return static_cast<LastMove>((v >> lastMoveShift(pl)) & 4); }
+		LastMove lastMove(Player pl) const { return static_cast<LastMove>((v >> lastMoveShift(pl)) & 15); }
 
 		/// <summary>
 		/// 直前の移動
 		/// </summary>
-		inline State lastMove(Player pl, LastMove lm) const {
+		State lastMove(Player pl, LastMove lm) const {
 			State res(v);
 			res.v &= ~(15 << lastMoveShift(pl));
 			res.v |= (static_cast<int>(lm) << lastMoveShift(pl));
@@ -228,12 +230,12 @@ namespace Morris {
 			EdgeEnds(const Point &a, const Point &b) : a(a), b(b) {}
 			EdgeEnds(const EdgeEnds &obj) : a(obj.a), b(obj.b) {}
 
-			inline const EdgeEnds &operator =(const EdgeEnds &rhs) {
+			const EdgeEnds &operator =(const EdgeEnds &rhs) {
 				a = rhs.a;
 				b = rhs.b;
 			}
-			inline bool operator ==(const EdgeEnds &rhs) const { return a == rhs.a && b == rhs.b; }
-			inline bool operator !=(const EdgeEnds &rhs) const { return a != rhs.a || b != rhs.b; }
+			bool operator ==(const EdgeEnds &rhs) const { return a == rhs.a && b == rhs.b; }
+			bool operator !=(const EdgeEnds &rhs) const { return a != rhs.a || b != rhs.b; }
 		};
 
 		constexpr static int exTbl[9] = { 0, 1, 2, 2, 2, 1, 0, 0, 0 };
@@ -242,7 +244,7 @@ namespace Morris {
 		/// <summary>
 		/// 辺の両端
 		/// </summary>
-		inline static EdgeEnds edgeEnds(Edge e) {
+		static EdgeEnds edgeEnds(Edge e) {
 			const int en = static_cast<int>(e);
 			const int d = en / 2, m = en % 2;
 			EdgeEnds res;
@@ -264,13 +266,6 @@ namespace Morris {
 
 		#pragma region 回転と反転
 
-		#define _morris_state_rotrev(fx, fy, tbl) \
-			State s2 = s; \
-			for (int y = 0; y < 3; ++y) for (int x = 0; x < 3; ++x) s2 = s2.vertex({ fx, fy }, s.vertex({ x, y })); \
-			const auto ph = s2.phase(); \
-			if (ph >= move2) s2 = s2.lastMove(first, tbl[s2.lastMove(first)]); \
-			if (ph >= move3) s2 = s2.lastMove(second, tbl[s2.lastMove(second)]); \
-			return s2
 		#define _morris_state_combine_tbl(t2, t1) \
 			{ \
 				t2[t1[0]], t2[t1[1]], t2[t1[2]], t2[t1[3]], \
@@ -290,68 +285,70 @@ namespace Morris {
 			e1202, e0211, e2212, e1211, e2122, e2211, e2021, e2111,
 			e1020, e2011, e0010, e1011, e0100, e0011, e0201, e0111,
 		};
-		constexpr static Edge tblRev0022[16] = _morris_state_combine_tbl(tblRev0121, tblRot90);
-		constexpr static Edge tblRev1012[16] = _morris_state_combine_tbl(tblRev0121, tblRot180);
-		constexpr static Edge tblRev2002[16] = _morris_state_combine_tbl(tblRev0121, tblRot270);
+		constexpr static Edge tblRev0022[16] = _morris_state_combine_tbl(tblRot90, tblRev0121);
+		constexpr static Edge tblRev1012[16] = _morris_state_combine_tbl(tblRot180, tblRev0121);
+		constexpr static Edge tblRev2002[16] = _morris_state_combine_tbl(tblRot270, tblRev0121);
+
+		#undef _morris_state_combine_tbl
 
 		/// <summary>
 		/// 何もしない。
 		/// </summary>
-		State rot0(State s) const { _morris_state_rotrev(x, y, tblRot0); }
+		State rot0() const;
 
 		/// <summary>
 		/// 盤面を90度回転する。
 		/// </summary>
-		State rot90(State s) const { _morris_state_rotrev(2 - y, x, tblRot90); }
+		State rot90() const;
 
 		/// <summary>
 		/// 盤面を180度回転する。
 		/// </summary>
-		State rot180(State s) const { _morris_state_rotrev(2 - x, 2 - y, tblRot180); }
+		State rot180() const;
 
 		/// <summary>
 		/// 盤面を270度回転する。
 		/// </summary>
-		State rot270(State s) const { _morris_state_rotrev(y, 2 - x, tblRot270); }
+		State rot270() const;
 
 		/// <summary>
 		/// 01-21 を軸に反転(上下反転)する。
 		/// </summary>
-		State rev0121(State s) const { _morris_state_rotrev(x, 2 - y, tblRev0121); }
+		State rev0121() const;
 
 		/// <summary>
 		/// 00-22 を軸に反転する。
 		/// </summary>
-		State rev0022(State s) const { _morris_state_rotrev(y, x, tblRev0022); }
+		State rev0022() const;
 
 		/// <summary>
 		/// 10-12 を軸に反転(左右反転)する。
 		/// </summary>
-		State rev1012(State s) const { _morris_state_rotrev(2 - x, y, tblRev1012); }
+		State rev1012() const;
 
 		/// <summary>
 		/// 20-02 を軸に反転する。
 		/// </summary>
-		State rev2002(State s) const { _morris_state_rotrev(2 - y, 2 - x, tblRev2002); }
+		State rev2002() const;
 
-		#undef _morris_state_combine_tbl
-		#undef _morris_state_rotrev
-
-		typedef State (State::*RotRevFunc)(State) const;
-		//static constexpr RotRevFunc allRotRev[8] = { rot0, rot90, rot180, rot270, rev0121, rev0022, rev1012, rev2002 };
-		static constexpr State (State::*allRotRev[8])(State) const = { &rot0, &rot90, &rot180, &rot270, &rev0121, &rev0022, &rev1012, &rev2002 };
+		static constexpr State (State::*allRotRev[8])() const = { &rot0, &rot90, &rot180, &rot270, &rev0121, &rev0022, &rev1012, &rev2002 };
 
 		/// <summary>
 		/// 回転や反転を適用した盤面のうち状態が最小のものを取得する。
 		/// </summary>
-		State minimize() {
-			int res = v;
-			for (int i = 1; i < 8; ++i) {
-				int temp = (this->*allRotRev[i])(*this).v;
-				if (temp < res) res = temp;
-			}
-			return State(res);
-		}
+		State minimize() const;
+
+		#pragma endregion
+
+		#pragma region 勝ち負け
+
+		/// <summary>
+		/// 勝者(3つ並んでいるコマ)
+		/// まだ決着がついていない場合は blank を返す。
+		/// </summary>
+		Vertex winner() const;
+
+		static std::map<State, Vertex> winMap;
 
 		#pragma endregion
 

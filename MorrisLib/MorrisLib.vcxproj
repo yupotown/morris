@@ -134,9 +134,11 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Blute.h" />
     <ClInclude Include="State.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Blute.cpp" />
     <ClCompile Include="State.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
