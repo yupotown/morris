@@ -7,10 +7,9 @@
 #include <vector>
 #include "../MorrisLib/State.hpp"
 #include "../MorrisLib/Graph.h"
+#include "../MorrisLib/Retrograde.h"
 
 using namespace Morris;
-
-Graph graph;
 
 #pragma region 画像
 
@@ -48,128 +47,30 @@ void saveImage(State s, String path) {
 
 #pragma endregion
 
-#pragma region グラフ解析
-
-// 先手/後手が既に勝っている状態のリスト
-std::vector<State> win1[2];
-
-// 先手/後手が確実に勝てる状態のリスト
-std::set<State> win[2];
-
-enum Winner {
-	unknown = 0,
-	fwin = 1,
-	swin = 2,
-};
-
-// 先手/後手が確実に勝てるか
-std::vector<Winner> winners;
-
-// 既に勝っている状態のリストを生成する。
-void makeWinnersList1() {
-	win1[State::first].clear();
-	win1[State::second].clear();
-	winners.assign(graph.getAll().size(), unknown);
-	for (std::size_t si = 0; si < graph.getAll().size(); ++si) {
-		State::Vertex winner = graph.getAll()[si].winner();
-		if (winner == State::red) {
-			win1[State::first].push_back(si);
-			winners[si] = fwin;
-		}
-		if (winner == State::blue) {
-			win1[State::second].push_back(si);
-			winners[si] = swin;
-		}
-	}
-}
-
-// 確実に勝てる状態のリストを生成する。
-void makeWinnersList(State::Player pl) {
-	const Winner w = (pl == State::first) ? fwin : swin;
-	win[pl].clear();
-	std::set<int> ss[2]; // ss[0]: 相手の番で確実に勝てる状態, ss[1]: 自分の番で確実に勝てる状態
-	std::vector<bool> vted(graph.getAll().size(), false);
-	for (std::size_t i = 0; i < win1[pl].size(); ++i) {
-		ss[0].insert(win1[pl][i]);
-		vted[win1[pl][i]] = true;
-	}
-	while (ss[0].size() != 0) {
-		// 自分の番で、次に勝てる状態が1つでもあれば勝てる状態
-		for (auto it = ss[0].begin(); it != ss[0].end(); ++it) {
-			const std::set<State> prev = graph.getPrev(graph.getAll()[*it]);
-			for (auto it2 = prev.begin(); it2 != prev.end(); ++it2) {
-				const State s = (*it2);
-				const int si = graph.getIndexOfAll(s);
-				if (vted[si]) continue;
-				vted[si] = true;
-				winners[si] = w;
-				win[pl].insert(si);
-				ss[1].insert(si);
-			}
-		}
-		ss[0].clear();
-
-		// 相手の番で、次の状態がすべて勝てる状態なら勝てる状態
-		std::set<int> parent;
-		for (auto it = ss[1].begin(); it != ss[1].end(); ++it) {
-			const std::set<State> prev = graph.getPrev(graph.getAll()[*it]);
-			for (auto it2 = prev.begin(); it2 != prev.end(); ++it2) {
-				const State si = graph.getIndexOfAll(*it2);
-				if (!vted[si]) parent.insert(si);
-			}
-
-		}
-		for (auto it = parent.begin(); it != parent.end(); ++it) {
-			const int si = (*it);
-			const State s = graph.getAll()[si];
-			bool f = true;
-			const std::set<State> next = graph.getNext(s);
-			for (auto it2 = next.begin(); it2 != next.end(); ++it2) {
-				f &= (winners[graph.getIndexOfAll(*it2)] == w);
-			}
-			if (f) {
-				vted[si] = true;
-				winners[si] = w;
-				win[pl].insert(si);
-				ss[0].insert(si);
-			}
-		}
-		ss[1].clear();
-	}
-}
-
-// 確実に勝てる状態のリストを生成する。
-void makeWinnersList() {
-	makeWinnersList1();
-	makeWinnersList(State::first);
-	makeWinnersList(State::second);
-}
-
-#pragma endregion
-
 #pragma region HTML
 
 // グラフ構造をリンクにした HTML を必勝手を明示して生成する。
-void generategraphHtml() {
-	std::vector<bool> vted(graph.getAll().size(), false);
+void generateGraphHtml(const Retrograde &analyzer) {
+	const Graph &g = analyzer.graph();
+	std::vector<bool> vted(g.getAll().size(), false);
 	std::queue<State> q;
 	q.push(0);
-	vted[graph.getIndexOfAll(0)] = true;
-	auto col = [&](int si) { return (winners[si] == 1) ? L"#ff0000" : (winners[si] == 2) ? L"#0000ff" : L"#808080"; };
+	vted[g.getIndexOfAll(0)] = true;
+	auto col = [&](int si) { return (analyzer[si] == Retrograde::red) ? L"#ff0000" : (analyzer[si] == Retrograde::blue) ? L"#0000ff" : L"#808080"; };
 	while (!q.empty()) {
 		State s = q.front(); q.pop();
 		saveImage(s, Format(L"out/img/", s.v, L".png"));
 		TextWriter writer(Format(L"out/html/", s.v, L".html"));
-		const int si = graph.getIndexOfAll(s);
+		const int si = g.getIndexOfAll(s);
 		writer.writeln(L"<html>");
 		writer.writeln(L"<head><title>", s.v, L"</title></head>");
 		writer.writeln(L"<body>");
 		writer.writeln(L"<img src=\"../img/", s.v, L".png\" style=\"border: solid 3px ", col(si), L";\" />");
 		writer.writeln(L"<hr />");
-		const std::set<State> next = graph.getNext(s);
+		const std::set<State> next = g.getNext(s);
 		for (auto it = next.begin(); it != next.end(); ++it) {
 			const State s2 = (*it);
-			const int si2 = graph.getIndexOfAll(s2);
+			const int si2 = g.getIndexOfAll(s2);
 			writer.write(L"<a href=\"", s2.v, L".html\" title=\"", s2.v, L"\">");
 			writer.write(L"<img src=\"../img/", s2.v, L".png\" style=\"border: solid 3px ", col(si2), L";\" />");
 			writer.writeln(L"</a>");
@@ -188,15 +89,19 @@ void generategraphHtml() {
 
 void Main()
 {
+	Graph g;
 	State s = 0;
 
-	graph.makeGraph();
-	graph.writeAllState("out/all");
-	graph.writeGraph("out/graph");
-	//graph.readAllState("out/all");
-	//graph.readgraph("out/graph");
-	makeWinnersList();
-	generategraphHtml();
+	//g.makeGraph();
+	//g.writeAllState("out/all");
+	//g.writeGraph("out/graph");
+	g.readAllState("out/all");
+	g.readGraph("out/graph");
+
+	Retrograde analyzer(g);
+	analyzer.analyze();
+
+	generateGraphHtml(analyzer);
 
 	#pragma region GUI 準備
 

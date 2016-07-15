@@ -24,9 +24,34 @@ namespace Morris {
 		const std::vector<State> &getAll() const;
 
 		/// <summary>
+		/// すべての(最小化された)状態の個数を取得する。
+		/// </summary>
+		std::size_t size() const;
+
+		/// <summary>
+		/// (最小化された)状態を取得する。
+		/// </summary>
+		const State &at(int index) const;
+
+		/// <summary>
+		/// (最小化された)状態を取得する。
+		/// </summary>
+		State &at(int index);
+
+		/// <summary>
+		/// (最小化された)状態を取得する。
+		/// </summary>
+		const State &operator [](int index) const;
+
+		/// <summary>
+		/// (最小化された)状態を取得する。
+		/// </summary>
+		State &operator [](int index);
+
+		/// <summary>
 		/// ある状態(を最小化した状態)が getAll のどこにあるかを取得する。
 		/// </summary>
-		const std::size_t getIndexOfAll(State s) const;
+		const int getIndexOfAll(State s) const;
 
 		/// <summary>
 		/// ある状態から1手で遷移できる(最小化された)状態の一覧を取得する。

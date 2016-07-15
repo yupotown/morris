@@ -100,9 +100,34 @@ namespace Morris {
 		return all;
 	}
 
-	const std::size_t Graph::getIndexOfAll(State s) const
+	std::size_t Graph::size() const
 	{
-		return allr.at(s);
+		return all.size();
+	}
+
+	const State & Graph::at(int index) const
+	{
+		return all.at(index);
+	}
+
+	State & Graph::at(int index)
+	{
+		return all.at(index);
+	}
+
+	const State & Graph::operator[](int index) const
+	{
+		return all[index];
+	}
+
+	State & Graph::operator[](int index)
+	{
+		return all[index];
+	}
+
+	const int Graph::getIndexOfAll(State s) const
+	{
+		return static_cast<int>(allr.at(s));
 	}
 
 	const std::set<State> Graph::getNext(State s) const
